@@ -210,6 +210,8 @@ a { color: var(--accent); }
 .fallo { border-left: 3px solid var(--ink); padding: 4px 0 4px 16px; font-family: var(--f-serif); font-style: italic; font-size: 16.5px; line-height: 1.6; max-width: 70ch; }
 .qs { display: flex; flex-direction: column; gap: 14px; }
 .q { border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.q { transition: border-color .3s, box-shadow .3s; }
+.q.flash { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent), 0 0 0 6px var(--accent-soft); }
 .q-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
 .q-n { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--ink-3); }
 .q-t { font-family: var(--f-serif); font-size: 16.5px; line-height: 1.6; max-width: 70ch; }
@@ -263,6 +265,8 @@ a { color: var(--accent); }
 .p-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; box-shadow: var(--shadow); padding: 24px clamp(18px, 3vw, 36px); display: flex; flex-direction: column; gap: 16px; }
 .p-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: center; font-size: 13px; color: var(--ink-3); }
 .p-top .seg button { font-size: 12.5px; }
+.p-from { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 6px 14px; font-size: 13.5px; color: var(--ink-2); background: var(--accent-soft); border-radius: 10px; padding: 9px 12px; }
+.p-from b { color: var(--ink); }
 .p-q { font-family: var(--f-serif); font-size: 18.5px; line-height: 1.65; max-width: 72ch; }
 .p-q p { margin: 0 0 .7em; }
 .p-q p:last-child { margin: 0; }
@@ -465,6 +469,8 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
     sel: null,
     pFilter: "all",
     pIdx: 0,
+    pFrom: null,
+    goQ: null,    // question index to scroll to when a digest opens  // question id when Practice was opened from a digest's "Practice this question"
     pOrder: [],
   };
   if (!DATA.topics.some((t) => t.id === state.topic)) state.topic = DATA.topics[0]?.id;
@@ -637,7 +643,7 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
       <section class="sec"><h3>Ruling</h3><div class="prose">${rich(c.ruling)}</div></section>
       <section class="sec"><h3>Disposition</h3><div class="fallo">${rich(c.disposition)}</div></section>
       <section class="sec"><h3>Bar exam questions</h3><div class="qs">${c.bar_questions.map((q, i) => `
-        <div class="q">
+        <div class="q" data-qi="${i}">
           <div class="q-h"><span class="q-n">QUESTION ${i + 1} OF ${c.bar_questions.length}</span>${qmark[qid(c, i)] ? `<span class="pill">${qmark[qid(c, i)] === "got" ? "You marked: got it" : "You marked: review again"}</span>` : ""}</div>
           <div class="q-t">${rich(q.q)}</div>
           <div class="q-act"><button type="button" class="btn" data-reveal="${i}" aria-expanded="false">Show suggested answer</button><button type="button" class="btn" data-practice="${i}">Practice this question</button></div>
@@ -647,6 +653,15 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
       <div class="src"><span>Read the full decision:</span>${c.sources.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a>`).join("")}</div>
       ${pnHTML(c.id)}
     </div>`;
+    if (state.goQ != null) {
+      const el = doc.querySelector(`.q[data-qi="${state.goQ}"]`);
+      state.goQ = null;
+      if (el) {
+        el.scrollIntoView({ block: "center" });
+        el.classList.add("flash");
+        setTimeout(() => el.classList.remove("flash"), 1800);
+      }
+    }
   }
 
   // Previous / next follow the list as currently filtered and sorted, so they work with the list hidden.
@@ -709,7 +724,10 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
       return;
     }
     el.dataset.qid = cur.id;
-    const top = `<div class="p-top"><span>Question <b>${state.pIdx + 1}</b> of ${state.pOrder.length} · ${esc(SUBJ[cur.c.subject]?.short || cur.c.subject)}</span><div class="seg">${filt}</div></div>`;
+    const from = state.pFrom === cur.id
+      ? `<div class="p-from"><span>Question ${cur.i + 1} of ${cur.c.bar_questions ? cur.c.bar_questions.length : cur.c.nq} from <b>${esc(cur.c.short_title)}</b></span><button type="button" class="linkish" data-goto="${esc(cur.c.id)}" data-q="${cur.i}">← Back to the digest</button></div>`
+      : "";
+    const top = `<div class="p-top"><span>Practice set: <b>${state.pIdx + 1}</b> of ${state.pOrder.length} · ${esc(SUBJ[cur.c.subject]?.short || cur.c.subject)}</span><div class="seg">${filt}</div></div>${from}`;
     const fc = getFull(cur.c.id);
     if (!fc) {
       el.innerHTML = `<div class="p-card">${top}<p class="muted loading">Loading the question…</p></div>`;
@@ -736,7 +754,7 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
       <div id="p-grade-out" hidden></div>
       <div id="p-reveal" hidden>
         <div class="sec" style="gap:12px"><h3>Suggested answer</h3>${alacHTML(q.alac)}</div>
-        <p class="from">From <button type="button" data-goto="${esc(cur.c.id)}">${esc(cur.c.short_title)}</button>, ${esc(cur.c.docket)}, ${esc(fmtDate(cur.c.date))} (${esc(cur.c.court)}).</p>
+        <p class="from">From <button type="button" data-goto="${esc(cur.c.id)}" data-q="${cur.i}">${esc(cur.c.short_title)}</button>, ${esc(cur.c.docket)}, ${esc(fmtDate(cur.c.date))} (${esc(cur.c.court)}).</p>
         <div class="p-act"><span class="muted">How did you do?</span>
           <button type="button" class="btn" data-qm="got" aria-pressed="${qmark[cur.id] === "got"}">Got it</button>
           <button type="button" class="btn" data-qm="again" aria-pressed="${qmark[cur.id] === "again"}">Review again</button>
@@ -934,7 +952,7 @@ Score from 0 to 5 in half points.`;
     setFocus(!document.body.classList.contains("focus"));
   });
   $("#m-browse").onclick = () => { state.mode = "browse"; render(); };
-  $("#m-practice").onclick = () => { closeTip(); state.mode = "practice"; resetOrder(); render(); };
+  $("#m-practice").onclick = () => { closeTip(); state.pFrom = null; state.mode = "practice"; resetOrder(); render(); };
   $("#topic-sel").onchange = (e) => { state.topic = e.target.value; store.set("topic", state.topic); state.sel = null; refilter(); };
   let qTimer;
   $("#q").addEventListener("input", (e) => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value.trim(); if (state.q) ensureSearch(); refilter(); }, 150); });
@@ -971,8 +989,14 @@ Score from 0 to 5 in half points.`;
     }
     if (b.dataset.practice != null) {
       const c = topic().cases.find((x) => x.id === state.sel);
+      const want = qid(c, Number(b.dataset.practice));
       state.mode = "practice"; state.pFilter = "all";
-      resetOrder(qid(c, Number(b.dataset.practice)));
+      if (!pool().some((x) => x.id === want)) {  // filters or search hide this case: clear them
+        state.subject = "all"; state.court = "all"; state.st = "all"; state.q = ""; $("#q").value = "";
+      }
+      state.pFrom = want;
+      closeTip();
+      resetOrder(want);
       render(); window.scrollTo(0, 0);
     }
   });
@@ -991,7 +1015,12 @@ Score from 0 to 5 in half points.`;
       b.parentElement.querySelectorAll("[data-qm]").forEach((x) => x.setAttribute("aria-pressed", String(qmark[id] === x.dataset.qm)));
       return;
     }
-    if (b.dataset.goto) { state.mode = "browse"; render(); openCase(b.dataset.goto, true); }
+    if (b.dataset.goto) {
+      const q = b.dataset.q != null ? Number(b.dataset.q) : null;
+      state.mode = "browse"; render();
+      state.goQ = q;  // return to the exact question, not the top (set after render so the final render uses it)
+      openCase(b.dataset.goto, q == null);
+    }
   });
 
   // Deep link: #<case-id>
