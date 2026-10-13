@@ -1,0 +1,747 @@
+<meta charset="utf-8">
+<title>Bar 2027 Case Reviewer</title>
+<script>
+  // Apply a saved light/dark choice before the page paints.
+  try { const t = localStorage.getItem("bar27:theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch {}
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Public+Sans:wght@400;500;600;700&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;0,8..60,700;1,8..60,400&display=swap">
+<style>
+/* Layout: case-file reviewer. Filters rail | docket list | open ponencia. Doctrine is set like a reviewee's highlighted passage. */
+:root {
+  --paper: #f3f5f8;
+  --surface: #ffffff;
+  --sunk: #e9edf3;
+  --ink: #141c30;
+  --ink-2: #4b556d;
+  --ink-3: #6f7890;
+  --rule: #d9dee7;
+  --accent: #23408e;
+  --accent-ink: #ffffff;
+  --accent-soft: #e3e9f7;
+  --mark: #fbe680;
+  --mark-ink: #221d05;
+  --banc: #7d1d2c;
+  --ok: #1d7048;
+  --ok-soft: #dff1e7;
+  --warn: #9a5800;
+  --warn-soft: #fbecd6;
+  --c-pol: #2a55b8;
+  --c-com: #0f7a78;
+  --c-civ: #4a7a1c;
+  --c-lab: #b5591a;
+  --c-crim: #b3263a;
+  --c-rem: #6b3fb0;
+  --f-serif: "Source Serif 4", "Iowan Old Style", Georgia, "Times New Roman", serif;
+  --f-sans: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --shadow: 0 1px 2px rgba(20, 28, 48, .06), 0 6px 20px rgba(20, 28, 48, .06);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper: #0d1220; --surface: #151c2d; --sunk: #1b2337; --ink: #e6e9f1; --ink-2: #a7afc3; --ink-3: #8790a8;
+    --rule: #28314a; --accent: #9db5ff; --accent-ink: #0d1220; --accent-soft: #212c4a; --mark: #4a4114; --mark-ink: #fff3bf;
+    --banc: #ff9eac; --ok: #7fd6a6; --ok-soft: #173326; --warn: #ffc27a; --warn-soft: #3a2a12;
+    --c-pol: #8eaaf5; --c-com: #6fd3cf; --c-civ: #a9d67a; --c-lab: #f2a46c; --c-crim: #ff8f9e; --c-rem: #c3a3f5;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --paper: #0d1220; --surface: #151c2d; --sunk: #1b2337; --ink: #e6e9f1; --ink-2: #a7afc3; --ink-3: #8790a8;
+  --rule: #28314a; --accent: #9db5ff; --accent-ink: #0d1220; --accent-soft: #212c4a; --mark: #4a4114; --mark-ink: #fff3bf;
+  --banc: #ff9eac; --ok: #7fd6a6; --ok-soft: #173326; --warn: #ffc27a; --warn-soft: #3a2a12;
+  --c-pol: #8eaaf5; --c-com: #6fd3cf; --c-civ: #a9d67a; --c-lab: #f2a46c; --c-crim: #ff8f9e; --c-rem: #c3a3f5;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 6px 20px rgba(0, 0, 0, .25);
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body { background: var(--paper); color: var(--ink); font-family: var(--f-sans); font-size: 15px; line-height: 1.5; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+a { color: var(--accent); }
+
+.wrap { padding-inline: 16px; padding-block: 16px 40px; max-width: 1480px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+
+/* Masthead */
+.mast { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 24px; padding-bottom: 14px; border-bottom: 1px solid var(--rule); }
+.mast .eyebrow { font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); font-weight: 600; }
+.mast h1 { font-family: var(--f-serif); font-weight: 700; font-size: clamp(24px, 3.2vw, 32px); line-height: 1.15; margin: 2px 0 0; text-wrap: balance; }
+.mast h1 .yr { background: linear-gradient(transparent 58%, var(--mark) 58%); color: var(--ink); padding: 0 2px; }
+.mast-r { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.theme { display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--rule); background: var(--surface); color: var(--ink-2); border-radius: 999px; padding: 7px 13px; font-size: 13.5px; font-weight: 600; }
+.theme:hover { border-color: var(--ink-3); color: var(--ink); }
+.theme .i-sun { display: none; }
+.theme.is-dark .i-sun { display: block; }
+.theme.is-dark .i-moon { display: none; }
+.modes { display: inline-flex; background: var(--sunk); border-radius: 999px; padding: 3px; gap: 2px; }
+.modes button { border: 0; background: transparent; padding: 7px 16px; border-radius: 999px; font-weight: 600; font-size: 14px; color: var(--ink-2); }
+.modes button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: var(--shadow); }
+
+/* Topic strip */
+.topic { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center; justify-content: space-between; }
+.topic-l { display: flex; flex-direction: column; gap: 4px; min-width: 0; flex: 1 1 420px; }
+.topic select { max-width: 100%; background: var(--surface); border: 1px solid var(--rule); border-radius: 8px; padding: 6px 10px; font-weight: 600; }
+.topic h2 { font-family: var(--f-serif); font-size: 20px; margin: 0; font-weight: 600; text-wrap: balance; }
+.topic p { margin: 0; color: var(--ink-2); font-size: 14px; max-width: 75ch; }
+.meter { display: flex; flex-direction: column; gap: 6px; min-width: 220px; flex: 0 1 300px; }
+.meter-row { display: flex; justify-content: space-between; font-size: 13px; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+.bar { height: 8px; border-radius: 99px; background: var(--sunk); overflow: hidden; display: flex; }
+.bar i { display: block; height: 100%; }
+.bar .b-m { background: var(--ok); }
+.bar .b-r { background: var(--accent); opacity: .55; }
+
+/* Main grid */
+.grid { display: grid; grid-template-columns: 236px minmax(0, 360px) minmax(0, 1fr); gap: 20px; align-items: start; }
+.rail { display: flex; flex-direction: column; gap: 18px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+.search { position: relative; }
+.search input { width: 100%; background: var(--surface); border: 1px solid var(--rule); border-radius: 10px; padding: 9px 12px; }
+.group { display: flex; flex-direction: column; gap: 4px; }
+.group-h { font-size: 11px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 4px; }
+.opt { display: flex; align-items: center; gap: 8px; border: 0; background: transparent; text-align: left; padding: 6px 8px; border-radius: 8px; color: var(--ink-2); font-size: 14px; }
+.opt:hover { background: var(--sunk); }
+.opt[aria-pressed="true"] { background: var(--accent-soft); color: var(--ink); font-weight: 600; }
+.opt .n { margin-left: auto; font-family: var(--f-mono); font-size: 12px; color: var(--ink-3); font-variant-numeric: tabular-nums; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; background: var(--ink-3); }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg button { border: 1px solid var(--rule); background: var(--surface); border-radius: 999px; padding: 4px 11px; font-size: 13px; color: var(--ink-2); }
+.seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+
+/* Case list */
+.list { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.list-h { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; color: var(--ink-3); padding: 0 2px; }
+.list-h select { background: transparent; border: 0; color: var(--ink-2); font-size: 13px; }
+.card { display: flex; flex-direction: column; gap: 6px; text-align: left; width: 100%; border: 1px solid var(--rule); background: var(--surface); border-radius: 12px; padding: 12px 14px; color: var(--ink); position: relative; }
+.card:hover { border-color: var(--ink-3); }
+.card[aria-current="true"] { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.card-top { display: flex; gap: 8px; align-items: center; font-family: var(--f-mono); font-size: 11.5px; color: var(--ink-3); flex-wrap: wrap; }
+.card-t { font-family: var(--f-serif); font-weight: 600; font-size: 16px; line-height: 1.3; }
+.card-s { font-size: 13px; color: var(--ink-2); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+.card-b { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 11.5px; font-weight: 600; padding: 2px 8px; border-radius: 999px; background: var(--sunk); color: var(--ink-2); white-space: nowrap; }
+.pill.banc { color: var(--banc); background: transparent; border: 1px solid currentColor; }
+.pill.div { color: var(--ink-3); background: transparent; border: 1px solid var(--rule); }
+.st { position: absolute; top: 12px; right: 12px; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--rule); }
+.st.reviewed { border-color: var(--accent); background: var(--accent); opacity: .6; }
+.st.mastered { border-color: var(--ok); background: var(--ok); }
+.empty { border: 1px dashed var(--rule); border-radius: 12px; padding: 18px; color: var(--ink-2); font-size: 14px; background: var(--surface); }
+
+/* Decision */
+.doc { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; box-shadow: var(--shadow); min-width: 0; }
+.doc-in { padding: 26px clamp(18px, 3vw, 40px) 32px; display: flex; flex-direction: column; gap: 22px; }
+.back { display: none; align-self: flex-start; border: 1px solid var(--rule); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13px; }
+.court { font-family: var(--f-serif); font-weight: 700; letter-spacing: .38em; text-transform: uppercase; font-size: 13px; color: var(--ink-2); text-align: center; }
+.court.is-banc { color: var(--banc); }
+.doc h2 { font-family: var(--f-serif); font-size: clamp(22px, 2.6vw, 30px); line-height: 1.2; margin: 0; text-align: center; text-wrap: balance; }
+.full { font-family: var(--f-serif); font-size: 13px; color: var(--ink-2); text-align: center; margin: 0 auto; max-width: 70ch; font-variant: small-caps; letter-spacing: .02em; }
+.dmeta { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 14px; font-family: var(--f-mono); font-size: 12.5px; color: var(--ink-2); }
+.class { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 14px; background: var(--sunk); border-radius: 10px; padding: 12px 14px; }
+.class dt { color: var(--ink-3); font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding-top: 2px; }
+.class dd { margin: 0; min-width: 0; }
+.status { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; justify-content: center; font-size: 13px; color: var(--ink-3); }
+.status button { border: 1px solid var(--rule); background: var(--surface); border-radius: 999px; padding: 5px 12px; font-size: 13px; font-weight: 600; color: var(--ink-2); }
+.status button[aria-pressed="true"].s-reviewed { border-color: var(--accent); color: var(--accent); background: var(--accent-soft); }
+.status button[aria-pressed="true"].s-mastered { border-color: var(--ok); color: var(--ok); background: var(--ok-soft); }
+.sec { display: flex; flex-direction: column; gap: 8px; }
+.sec h3 { font-size: 11.5px; font-weight: 700; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); margin: 0; display: flex; align-items: center; gap: 10px; }
+.sec h3::after { content: ""; flex: 1; height: 1px; background: var(--rule); }
+.prose { font-family: var(--f-serif); font-size: 17px; line-height: 1.65; max-width: 70ch; }
+.prose p { margin: 0 0 .8em; }
+.prose p:last-child { margin-bottom: 0; }
+.prose ul, .prose ol { margin: 0 0 .8em; padding-left: 1.3em; }
+.doctrine { font-family: var(--f-serif); font-size: 18px; line-height: 1.7; max-width: 70ch; border-left: 3px solid var(--mark); padding-left: 16px; }
+.doctrine p { margin: 0 0 .7em; }
+.doctrine p:last-child { margin-bottom: 0; }
+.doctrine .hl { background: var(--mark); color: var(--mark-ink); box-decoration-break: clone; -webkit-box-decoration-break: clone; padding: .05em .2em; border-radius: 2px; }
+.issues { margin: 0; padding-left: 1.4em; font-family: var(--f-serif); font-size: 17px; line-height: 1.6; max-width: 70ch; display: flex; flex-direction: column; gap: 6px; }
+.fallo { border-left: 3px solid var(--ink); padding: 4px 0 4px 16px; font-family: var(--f-serif); font-style: italic; font-size: 16.5px; line-height: 1.6; max-width: 70ch; }
+.qs { display: flex; flex-direction: column; gap: 14px; }
+.q { border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.q-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+.q-n { font-family: var(--f-mono); font-size: 12px; font-weight: 500; color: var(--ink-3); }
+.q-t { font-family: var(--f-serif); font-size: 16.5px; line-height: 1.6; max-width: 70ch; }
+.q-t p { margin: 0 0 .6em; }
+.q-t p:last-child { margin: 0; }
+.q-act { display: flex; flex-wrap: wrap; gap: 8px; }
+.btn { border: 1px solid var(--rule); background: var(--surface); border-radius: 8px; padding: 7px 13px; font-size: 13.5px; font-weight: 600; color: var(--ink); }
+.btn:hover { border-color: var(--ink-3); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn:disabled { opacity: .55; cursor: default; }
+.alac { display: grid; grid-template-columns: 34px 1fr; gap: 10px 12px; }
+.alac .k { font-family: var(--f-serif); font-weight: 700; font-size: 20px; line-height: 1; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 8px; background: var(--sunk); color: var(--ink-2); }
+.alac .v { min-width: 0; }
+.alac .v b { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); margin-bottom: 2px; }
+.alac .v div { font-family: var(--f-serif); font-size: 16px; line-height: 1.6; }
+.alac .v div p { margin: 0 0 .5em; }
+.alac .v div p:last-child { margin: 0; }
+.src { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--ink-3); border-top: 1px solid var(--rule); padding-top: 14px; }
+.banner { background: var(--warn-soft); color: var(--ink); border: 1px solid var(--warn); border-radius: 10px; padding: 12px 14px; font-size: 14.5px; display: flex; flex-direction: column; gap: 6px; }
+.banner b { color: var(--warn); letter-spacing: .04em; text-transform: uppercase; font-size: 12px; }
+.banner button { align-self: flex-start; border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 600; font-size: 14px; }
+.pill.sup { color: var(--warn); background: var(--warn-soft); }
+.dnotes { border-top: 1px solid var(--rule); padding-top: 12px; font-size: 14px; color: var(--ink-2); }
+.dnotes summary { cursor: pointer; font-weight: 600; color: var(--ink-3); font-size: 13px; }
+.dnotes p { margin: 8px 0 0; max-width: 75ch; line-height: 1.55; }
+.hidden-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+
+/* Practice */
+.practice { grid-column: 2 / -1; display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.p-card { background: var(--surface); border: 1px solid var(--rule); border-radius: 14px; box-shadow: var(--shadow); padding: 24px clamp(18px, 3vw, 36px); display: flex; flex-direction: column; gap: 16px; }
+.p-top { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 16px; align-items: center; font-size: 13px; color: var(--ink-3); }
+.p-top .seg button { font-size: 12.5px; }
+.p-q { font-family: var(--f-serif); font-size: 18.5px; line-height: 1.65; max-width: 72ch; }
+.p-q p { margin: 0 0 .7em; }
+.p-q p:last-child { margin: 0; }
+.p-lab { font-size: 12px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; color: var(--ink-3); display: flex; justify-content: space-between; gap: 8px; }
+textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: var(--paper); border: 1px solid var(--rule); border-radius: 10px; padding: 14px; font-family: var(--f-serif); font-size: 16.5px; line-height: 1.6; }
+.p-act { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.p-act .sp { flex: 1; }
+.grade { border: 1px solid var(--rule); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 12px; background: var(--paper); }
+.grade-h { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.score { font-family: var(--f-serif); font-weight: 700; font-size: 30px; font-variant-numeric: tabular-nums; line-height: 1; }
+.score small { font-size: 15px; color: var(--ink-3); font-weight: 600; }
+.chk { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+.chk div { border-radius: 8px; padding: 8px 10px; font-size: 13px; background: var(--surface); border: 1px solid var(--rule); }
+.chk div b { display: block; font-size: 11px; letter-spacing: .08em; text-transform: uppercase; }
+.chk .y b { color: var(--ok); }
+.chk .n b { color: var(--warn); }
+.grade ul { margin: 0; padding-left: 1.2em; font-size: 14.5px; }
+.grade .model { font-family: var(--f-serif); font-size: 15.5px; line-height: 1.6; border-left: 3px solid var(--mark); padding-left: 12px; }
+.muted { color: var(--ink-3); font-size: 13px; }
+.from { font-size: 14px; color: var(--ink-2); }
+.from button { border: 0; background: none; padding: 0; color: var(--accent); text-decoration: underline; font-weight: 600; }
+
+.foot { border-top: 1px solid var(--rule); padding-top: 14px; display: flex; flex-direction: column; gap: 6px; font-size: 12.5px; color: var(--ink-3); }
+.foot p { margin: 0; max-width: 90ch; }
+.foot .credit { font-weight: 600; color: var(--ink-2); }
+
+/* Responsive */
+@media (max-width: 1120px) {
+  .grid { grid-template-columns: minmax(0, 340px) minmax(0, 1fr); }
+  .rail { grid-column: 1 / -1; position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 14px 20px; }
+  .rail .subjects { grid-column: 1 / -1; }
+  .rail .subjects .opts { display: flex; flex-wrap: wrap; gap: 4px; }
+  .practice { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .rail { grid-template-columns: minmax(0, 1fr); }
+  .back { display: inline-flex; }
+  body.reading .rail, body.reading .list, body.reading .topic { display: none; }
+  body:not(.reading) .doc { display: none; }
+  .doc-in { padding-inline: 18px; }
+  .prose, .q-t, .issues { font-size: 16px; }
+  .doctrine { font-size: 17px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .card, .btn, .opt { transition: border-color .15s, background-color .15s; }
+}
+</style>
+
+<div class="wrap">
+  <header class="mast">
+    <div>
+      <div class="eyebrow">2027 Bar Examinations · jurisprudence up to June 30, 2026</div>
+      <h1>Bar <span class="yr">2027</span> Case Reviewer</h1>
+    </div>
+    <div class="mast-r">
+      <div class="modes" role="group" aria-label="Mode">
+        <button type="button" id="m-browse" aria-pressed="true">Digests</button>
+        <button type="button" id="m-practice" aria-pressed="false">Practice</button>
+      </div>
+      <button type="button" class="theme" id="theme-btn" aria-label="Switch to dark mode" title="Switch to dark mode">
+        <svg class="i-moon" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5Z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/></svg>
+        <svg class="i-sun" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span id="theme-label">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="topic" aria-label="Topic">
+    <div class="topic-l">
+      <label class="hidden-label" for="topic-sel">Topic</label>
+      <select id="topic-sel"></select>
+      <h2 id="topic-title"></h2>
+      <p id="topic-desc"></p>
+    </div>
+    <div class="meter">
+      <div class="meter-row"><span>Your progress</span><span id="meter-n"></span></div>
+      <div class="bar" aria-hidden="true"><i class="b-m" id="bar-m"></i><i class="b-r" id="bar-r"></i></div>
+      <div class="meter-row"><span id="meter-m"></span><span id="meter-r"></span></div>
+    </div>
+  </section>
+
+  <div class="grid">
+    <aside class="rail" aria-label="Filters">
+      <div class="search">
+        <label class="hidden-label" for="q">Search cases</label>
+        <input id="q" type="search" placeholder="Search title, G.R. No., doctrine…" autocomplete="off">
+      </div>
+      <div class="group subjects">
+        <div class="group-h">Bar subject</div>
+        <div class="opts" id="f-subject"></div>
+      </div>
+      <div class="group">
+        <div class="group-h">Court</div>
+        <div class="seg" id="f-court"></div>
+      </div>
+      <div class="group">
+        <div class="group-h">My status</div>
+        <div class="seg" id="f-status"></div>
+      </div>
+    </aside>
+
+    <section class="list" id="list" aria-label="Cases"></section>
+    <article class="doc" id="doc" aria-live="polite"></article>
+    <section class="practice" id="practice" hidden></section>
+  </div>
+
+  <footer class="foot">
+    <p>A study aid for the 2027 Bar Examinations. Each digest is an AI-assisted summary written from the full text of the decision; where a digest and the decision differ, the decision controls. Every case links to its official source.</p>
+    <p>Sources: Supreme Court E-Library and the Supreme Court website. Coverage and syllabus: Bar Bulletin No. 1-2027. Not affiliated with the Supreme Court of the Philippines.</p>
+    <p class="credit">Made by JC Medenilla</p>
+  </footer>
+</div>
+
+<script type="application/json" id="reviewer-data">/*__REVIEWER_DATA__*/null</script>
+<script>
+(() => {
+  "use strict";
+  const DATA = JSON.parse(document.getElementById("reviewer-data").textContent) || { subjects: [], topics: [] };
+  const SUBJ = {
+    "Political and Public International Law": { short: "Political & PIL", c: "--c-pol" },
+    "Commercial and Taxation Laws": { short: "Commercial & Tax", c: "--c-com" },
+    "Civil Law and Land Titles and Deeds": { short: "Civil", c: "--c-civ" },
+    "Labor Law and Social Legislation": { short: "Labor", c: "--c-lab" },
+    "Criminal Law": { short: "Criminal", c: "--c-crim" },
+    "Remedial Law, Legal and Judicial Ethics": { short: "Remedial & Ethics", c: "--c-rem" },
+  };
+  const $ = (s) => document.querySelector(s);
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
+  // Light markdown: paragraphs, **bold**, *italic*, ==highlight==, "- " bullet lines.
+  function rich(src) {
+    const inline = (t) => esc(t)
+      .replace(/==(.+?)==/g, '<span class="hl">$1</span>')
+      .replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>")
+      .replace(/(^|[^*])\*(?!\s)(.+?)\*(?!\*)/g, "$1<em>$2</em>");
+    return String(src ?? "").trim().split(/\n\s*\n/).map((block) => {
+      const lines = block.split("\n");
+      if (lines.every((l) => /^\s*[-•]\s+/.test(l))) {
+        return "<ul>" + lines.map((l) => "<li>" + inline(l.replace(/^\s*[-•]\s+/, "")) + "</li>").join("") + "</ul>";
+      }
+      return "<p>" + lines.map(inline).join("<br>") + "</p>";
+    }).join("");
+  }
+  const fmtDate = (iso) => {
+    const d = new Date(iso + "T00:00:00");
+    return isNaN(d) ? iso : d.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  };
+
+  // Per-viewer progress, kept in this browser only.
+  const store = {
+    get(k, d) { try { const v = localStorage.getItem("bar27:" + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+    set(k, v) { try { localStorage.setItem("bar27:" + k, JSON.stringify(v)); } catch {} },
+  };
+  const status = store.get("status", {});     // caseId -> "reviewed" | "mastered"
+  const qmark = store.get("qmark", {});       // questionId -> "got" | "again"
+
+  const state = {
+    topic: store.get("topic", DATA.topics[0]?.id),
+    mode: "browse",
+    subject: "all",
+    court: "all",
+    st: "all",
+    q: "",
+    sort: "new",
+    sel: null,
+    pFilter: "all",
+    pIdx: 0,
+    pOrder: [],
+  };
+  if (!DATA.topics.some((t) => t.id === state.topic)) state.topic = DATA.topics[0]?.id;
+
+  const topic = () => DATA.topics.find((t) => t.id === state.topic) || { cases: [], title: "No topics yet", description: "" };
+  const qid = (c, i) => c.id + "~q" + (i + 1);
+
+  function matches(c) {
+    if (state.subject !== "all" && c.subject !== state.subject && !(c.other_subjects || []).some((o) => o.subject === state.subject)) return false;
+    if (state.court === "banc" && c.court !== "En Banc") return false;
+    if (state.court === "div" && c.court === "En Banc") return false;
+    const s = status[c.id] || "none";
+    if (state.st !== "all" && s !== state.st) return false;
+    if (state.q) {
+      const hay = [c.short_title, c.full_title, c.docket, c.doctrine, c.syllabus_topic, (c.topics || []).join(" "), c.subject].join(" ").toLowerCase();
+      if (!state.q.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w))) return false;
+    }
+    return true;
+  }
+  const isRelated = (c) => state.subject !== "all" && c.subject !== state.subject;
+  const filtered = () => {
+    const cs = topic().cases.filter(matches);
+    if (state.sort === "old") cs.sort((a, b) => a.date.localeCompare(b.date));
+    else if (state.sort === "az") cs.sort((a, b) => a.short_title.localeCompare(b.short_title));
+    else cs.sort((a, b) => b.date.localeCompare(a.date));
+    // Cases filed under the chosen subject come first; cases that only touch it follow.
+    return [...cs.filter((c) => !isRelated(c)), ...cs.filter(isRelated)];
+  };
+
+  function subjectDot(s) { return `<span class="dot" style="background:var(${(SUBJ[s] || {}).c || "--ink-3"})"></span>`; }
+  function courtPill(c) { return c.court === "En Banc" ? `<span class="pill banc">En Banc</span>` : `<span class="pill div">${esc(c.court)}</span>`; }
+
+  // ---------- Topic + meter ----------
+  function renderTopic() {
+    const sel = $("#topic-sel");
+    sel.innerHTML = DATA.topics.map((t) => `<option value="${esc(t.id)}"${t.id === state.topic ? " selected" : ""}>${esc(t.title)}</option>`).join("");
+    sel.hidden = DATA.topics.length < 2;
+    const t = topic();
+    $("#topic-title").textContent = t.title;
+    $("#topic-desc").textContent = t.description || "";
+    const n = t.cases.length;
+    const m = t.cases.filter((c) => status[c.id] === "mastered").length;
+    const r = t.cases.filter((c) => status[c.id] === "reviewed").length;
+    $("#meter-n").textContent = `${m + r} of ${n} cases`;
+    $("#meter-m").textContent = `${m} mastered`;
+    $("#meter-r").textContent = `${r} reviewed`;
+    $("#bar-m").style.width = n ? (m / n * 100) + "%" : "0";
+    $("#bar-r").style.width = n ? (r / n * 100) + "%" : "0";
+  }
+
+  // ---------- Filters ----------
+  function renderFilters() {
+    const cs = topic().cases;
+    const count = (s) => cs.filter((c) => c.subject === s).length;
+    const related = (s) => cs.filter((c) => c.subject !== s && (c.other_subjects || []).some((o) => o.subject === s)).length;
+    $("#f-subject").innerHTML =
+      `<button type="button" class="opt" data-s="all" aria-pressed="${state.subject === "all"}"><span class="dot"></span>All subjects<span class="n">${cs.length}</span></button>` +
+      DATA.subjects.map((s) => `<button type="button" class="opt" data-s="${esc(s)}" aria-pressed="${state.subject === s}" title="${esc(s)}: ${count(s)} cases, plus ${related(s)} that also touch it">${subjectDot(s)}${esc(SUBJ[s]?.short || s)}<span class="n">${count(s)}</span></button>`).join("");
+    const nb = cs.filter((c) => c.court === "En Banc").length;
+    $("#f-court").innerHTML = [["all", "All"], ["banc", `En Banc · ${nb}`], ["div", `Division · ${cs.length - nb}`]]
+      .map(([k, l]) => `<button type="button" data-c="${k}" aria-pressed="${state.court === k}">${l}</button>`).join("");
+    $("#f-status").innerHTML = [["all", "All"], ["none", "Not yet"], ["reviewed", "Reviewed"], ["mastered", "Mastered"]]
+      .map(([k, l]) => `<button type="button" data-st="${k}" aria-pressed="${state.st === k}">${l}</button>`).join("");
+  }
+
+  // ---------- List ----------
+  function renderList() {
+    const cs = filtered();
+    const nRel = cs.filter(isRelated).length;
+    const head = `<div class="list-h"><span>${cs.length - nRel} case${cs.length - nRel === 1 ? "" : "s"}${nRel ? ` · ${nRel} related` : ""}</span>
+      <label class="hidden-label" for="sort">Sort</label>
+      <select id="sort"><option value="new"${state.sort === "new" ? " selected" : ""}>Newest first</option><option value="old"${state.sort === "old" ? " selected" : ""}>Oldest first</option><option value="az"${state.sort === "az" ? " selected" : ""}>A to Z</option></select></div>`;
+    if (!topic().cases.length) {
+      $("#list").innerHTML = head + `<div class="empty">No digests in this topic yet. Run <code>python tools/build.py</code> after adding case files.</div>`;
+      return;
+    }
+    if (!cs.length) {
+      $("#list").innerHTML = head + `<div class="empty">No case matches these filters. Clear the search or pick “All subjects”.</div>`;
+      return;
+    }
+    $("#list").innerHTML = head + cs.map((c) => `
+      <button type="button" class="card" data-id="${esc(c.id)}" aria-current="${state.sel === c.id}">
+        <span class="st ${status[c.id] || ""}" title="${status[c.id] ? esc(status[c.id]) : "not yet reviewed"}"></span>
+        <span class="card-top"><span>${esc(c.docket)}</span><span>·</span><span>${esc(fmtDate(c.date))}</span></span>
+        <span class="card-t">${esc(c.short_title)}</span>
+        <span class="card-s">${esc((c.topics || []).join(" · "))}</span>
+        <span class="card-b">${courtPill(c)}<span class="pill">${subjectDot(c.subject)}${esc(SUBJ[c.subject]?.short || c.subject)}</span>${isRelated(c) ? `<span class="pill div">Related</span>` : ""}${c.superseded_by ? `<span class="pill sup">${esc(c.superseded_by.label || "Superseded")}</span>` : ""}</span>
+      </button>`).join("");
+  }
+
+  // ---------- Decision view ----------
+  function alacHTML(a) {
+    const rows = [["A", "Answer", a.answer], ["L", "Legal basis", a.legal_basis], ["A", "Application", a.application], ["C", "Conclusion", a.conclusion]];
+    return `<div class="alac">${rows.map(([k, l, v]) => `<span class="k" aria-hidden="true">${k}</span><div class="v"><b>${l}</b><div>${rich(v)}</div></div>`).join("")}</div>`;
+  }
+  function renderDoc() {
+    const c = topic().cases.find((x) => x.id === state.sel);
+    const doc = $("#doc");
+    if (!c) {
+      const first = filtered()[0];
+      doc.innerHTML = `<div class="doc-in"><div class="court">Select a case</div><p class="full" style="font-variant:normal">Pick a case from the list to read its doctrine, facts, issues, ruling and three bar-style questions with suggested ALAC answers.</p>${first ? `<div style="text-align:center"><button type="button" class="btn primary" data-open="${esc(first.id)}">Open ${esc(first.short_title)}</button></div>` : ""}</div>`;
+      return;
+    }
+    const s = status[c.id] || "none";
+    const others = (c.other_subjects || []).map((o) => `${esc(SUBJ[o.subject]?.short || o.subject)}${o.syllabus_topic ? " — " + esc(o.syllabus_topic) : ""}`).join("<br>");
+    doc.innerHTML = `<div class="doc-in">
+      <button type="button" class="back" id="back">← All cases</button>
+      <div class="court ${c.court === "En Banc" ? "is-banc" : ""}">${esc(c.court)}</div>
+      <h2>${esc(c.short_title)}</h2>
+      <p class="full">${esc(c.full_title)}</p>
+      <div class="dmeta"><span>${esc(c.docket)}</span><span>${esc(fmtDate(c.date))}</span><span>${esc(c.ponente)}</span><span>${esc(c.decision_type)}</span></div>
+      ${c.superseded_by ? `<div class="banner" role="note"><b>${esc(c.superseded_by.label || "Superseded")} — not the controlling rule</b><span>${esc(c.superseded_by.summary)}</span>${topic().cases.some((x) => x.id === c.superseded_by.id) ? `<button type="button" data-open="${esc(c.superseded_by.id)}">Read the later ruling</button>` : ""}</div>` : ""}
+      <dl class="class">
+        <dt>Subject</dt><dd>${subjectDot(c.subject)} ${esc(c.subject)}</dd>
+        <dt>Syllabus</dt><dd>${esc(c.syllabus_topic)}</dd>
+        <dt>Topics</dt><dd>${esc((c.topics || []).join(" · "))}</dd>
+        ${others ? `<dt>Also in</dt><dd>${others}</dd>` : ""}
+      </dl>
+      <div class="status" role="group" aria-label="Mark this case">
+        <span>Mark as</span>
+        <button type="button" class="s-reviewed" data-mark="reviewed" aria-pressed="${s === "reviewed"}">Reviewed</button>
+        <button type="button" class="s-mastered" data-mark="mastered" aria-pressed="${s === "mastered"}">Mastered</button>
+      </div>
+      <section class="sec"><h3>Doctrine</h3><div class="doctrine">${rich(c.doctrine).replace(/<strong>/g, '<strong class="hl">')}</div></section>
+      <section class="sec"><h3>Facts</h3><div class="prose">${rich(c.facts)}</div></section>
+      <section class="sec"><h3>Issues</h3><ol class="issues">${c.issues.map((i) => `<li>${esc(i)}</li>`).join("")}</ol></section>
+      <section class="sec"><h3>Ruling</h3><div class="prose">${rich(c.ruling)}</div></section>
+      <section class="sec"><h3>Disposition</h3><div class="fallo">${rich(c.disposition)}</div></section>
+      <section class="sec"><h3>Bar exam questions</h3><div class="qs">${c.bar_questions.map((q, i) => `
+        <div class="q">
+          <div class="q-h"><span class="q-n">QUESTION ${i + 1} OF ${c.bar_questions.length}</span>${qmark[qid(c, i)] ? `<span class="pill">${qmark[qid(c, i)] === "got" ? "You marked: got it" : "You marked: review again"}</span>` : ""}</div>
+          <div class="q-t">${rich(q.q)}</div>
+          <div class="q-act"><button type="button" class="btn" data-reveal="${i}" aria-expanded="false">Show suggested answer</button><button type="button" class="btn" data-practice="${i}">Practice this question</button></div>
+          <div data-ans="${i}" hidden>${alacHTML(q.alac)}</div>
+        </div>`).join("")}</div></section>
+      ${c.notes ? `<details class="dnotes"><summary>Notes on this digest</summary>${rich(c.notes)}</details>` : ""}
+      <div class="src"><span>Read the full decision:</span>${c.sources.map((x) => `<a href="${esc(x.url)}" target="_blank" rel="noopener">${esc(x.label)}</a>`).join("")}</div>
+    </div>`;
+  }
+
+  function openCase(id, scroll) {
+    state.sel = id;
+    document.body.classList.add("reading");
+    try { history.replaceState(null, "", "#" + id); } catch {}
+    renderList(); renderDoc();
+    if (scroll) { const d = $("#doc"); if (d.getBoundingClientRect().top < 0 || window.innerWidth <= 760) d.scrollIntoView({ block: "start" }); }
+  }
+
+  // ---------- Practice ----------
+  function pool() {
+    const out = [];
+    for (const c of filtered()) c.bar_questions.forEach((q, i) => {
+      const m = qmark[qid(c, i)];
+      if (state.pFilter === "again" && m !== "again") return;
+      if (state.pFilter === "new" && m) return;
+      out.push({ c, q, i, id: qid(c, i) });
+    });
+    return out;
+  }
+  function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+  function resetOrder(keepId) {
+    const p = pool();
+    state.pOrder = shuffle(p.map((x) => x.id));
+    if (keepId && state.pOrder.includes(keepId)) { state.pOrder = [keepId, ...state.pOrder.filter((x) => x !== keepId)]; }
+    state.pIdx = 0;
+  }
+  let sampleFn = null, sampleChecked = false, gradeCtl = null;
+
+  function renderPractice() {
+    const el = $("#practice");
+    const p = pool();
+    const byId = Object.fromEntries(p.map((x) => [x.id, x]));
+    state.pOrder = state.pOrder.filter((id) => byId[id]);
+    if (state.pOrder.length !== p.length) resetOrder();
+    const cur = byId[state.pOrder[state.pIdx]];
+    const filt = [["all", "All questions"], ["new", "Not yet marked"], ["again", "Review again"]]
+      .map(([k, l]) => `<button type="button" data-pf="${k}" aria-pressed="${state.pFilter === k}">${l}</button>`).join("");
+    if (!cur) {
+      el.innerHTML = `<div class="p-card"><div class="p-top"><span>Practice</span><div class="seg">${filt}</div></div><div class="empty">No questions match. Widen the subject or court filters, or switch to “All questions”.</div></div>`;
+      return;
+    }
+    const draft = store.get("draft:" + cur.id, "");
+    el.innerHTML = `<div class="p-card">
+      <div class="p-top"><span>Question <b>${state.pIdx + 1}</b> of ${state.pOrder.length} · ${esc(SUBJ[cur.c.subject]?.short || cur.c.subject)}</span><div class="seg">${filt}</div></div>
+      <div class="p-q">${rich(cur.q.q)}</div>
+      <div class="p-lab"><label for="p-ans">Your answer</label><span>Answer · Legal basis · Application · Conclusion</span></div>
+      <textarea id="p-ans" placeholder="Write it the way you would in the bar booklet: answer first, then the legal basis, apply it to the facts, then conclude.">${esc(draft)}</textarea>
+      <div class="p-act">
+        <button type="button" class="btn primary" id="p-grade" hidden>Grade my answer</button>
+        <button type="button" class="btn" id="p-show">Show suggested answer</button>
+        <span class="sp"></span>
+        <button type="button" class="btn" id="p-prev" ${state.pIdx === 0 ? "disabled" : ""}>← Previous</button>
+        <button type="button" class="btn" id="p-next">Next question →</button>
+      </div>
+      <div id="p-grade-out" hidden></div>
+      <div id="p-reveal" hidden>
+        <div class="sec" style="gap:12px"><h3>Suggested answer</h3>${alacHTML(cur.q.alac)}</div>
+        <p class="from">From <button type="button" data-goto="${esc(cur.c.id)}">${esc(cur.c.short_title)}</button>, ${esc(cur.c.docket)}, ${esc(fmtDate(cur.c.date))} (${esc(cur.c.court)}).</p>
+        <div class="p-act"><span class="muted">How did you do?</span>
+          <button type="button" class="btn" data-qm="got" aria-pressed="${qmark[cur.id] === "got"}">Got it</button>
+          <button type="button" class="btn" data-qm="again" aria-pressed="${qmark[cur.id] === "again"}">Review again</button>
+        </div>
+      </div>
+    </div>`;
+    el.dataset.qid = cur.id;
+    const ta = $("#p-ans");
+    ta.addEventListener("input", () => store.set("draft:" + cur.id, ta.value));
+    if (sampleFn) $("#p-grade").hidden = false;
+  }
+
+  function gradePrompt(cur, answer) {
+    return `You are a Philippine Bar examiner grading one essay answer for the 2027 Bar Examinations. The problem is worth 5 points. Grade the examinee's answer against the controlling doctrine and the suggested answer below, which come from the Supreme Court decision ${cur.c.short_title}, ${cur.c.docket}, ${cur.c.date}. Do not rely on any other case. Reward a correct conclusion only when it is supported by the right legal basis and applied to the facts. Accept equivalent reasoning that reaches the same result. Be strict but fair, the way a bar examiner would be.
+
+PROBLEM:
+${cur.q.q}
+
+CONTROLLING DOCTRINE:
+${cur.c.doctrine}
+
+SUGGESTED ANSWER (ALAC):
+Answer: ${cur.q.alac.answer}
+Legal basis: ${cur.q.alac.legal_basis}
+Application: ${cur.q.alac.application}
+Conclusion: ${cur.q.alac.conclusion}
+
+EXAMINEE'S ANSWER:
+${answer}
+
+Reply with only a JSON object of this shape:
+{"score": 3.5, "verdict": "one sentence overall assessment", "alac": {"answer": {"ok": true, "note": "short note"}, "legal_basis": {"ok": false, "note": "short note"}, "application": {"ok": true, "note": "short note"}, "conclusion": {"ok": true, "note": "short note"}}, "strengths": ["..."], "fix": ["specific thing to add or correct"], "model": "a tightened version of the examinee's own answer, at most 130 words"}
+Score from 0 to 5 in half points.`;
+  }
+
+  async function grade() {
+    const el = $("#practice");
+    const id = el.dataset.qid;
+    const cur = pool().find((x) => x.id === id);
+    const ans = $("#p-ans").value.trim();
+    const out = $("#p-grade-out");
+    out.hidden = false;
+    if (ans.length < 40) { out.innerHTML = `<div class="grade"><span class="muted">Write a fuller answer first (at least a couple of sentences) so there is something to grade.</span></div>`; return; }
+    const btn = $("#p-grade");
+    btn.disabled = true;
+    gradeCtl?.abort();
+    gradeCtl = new AbortController();
+    out.innerHTML = `<div class="grade"><span class="muted">Grading… this usually takes 10 to 40 seconds.</span><div><button type="button" class="btn" id="p-stop">Stop</button></div></div>`;
+    $("#p-stop").onclick = () => gradeCtl?.abort();
+    try {
+      const r = await sampleFn.json(gradePrompt(cur, ans), { signal: gradeCtl.signal, cache: false });
+      if (el.dataset.qid !== id) return;
+      const sc = Math.max(0, Math.min(5, Number(r.score) || 0));
+      const parts = [["answer", "Answer"], ["legal_basis", "Legal basis"], ["application", "Application"], ["conclusion", "Conclusion"]];
+      out.innerHTML = `<div class="grade">
+        <div class="grade-h"><span class="score">${sc.toFixed(1)} <small>/ 5</small></span><span>${esc(r.verdict || "")}</span></div>
+        <div class="chk">${parts.map(([k, l]) => { const v = (r.alac || {})[k] || {}; return `<div class="${v.ok ? "y" : "n"}"><b>${v.ok ? "✓" : "✗"} ${l}</b>${esc(v.note || "")}</div>`; }).join("")}</div>
+        ${(r.strengths || []).length ? `<div><b>What worked</b><ul>${r.strengths.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+        ${(r.fix || []).length ? `<div><b>Fix this</b><ul>${r.fix.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+        ${r.model ? `<div><b>Tightened version of your answer</b><div class="model">${rich(r.model)}</div></div>` : ""}
+        <span class="muted">AI feedback is a study aid. The suggested answer and the decision itself control.</span>
+      </div>`;
+    } catch (e) {
+      const code = e && e.code;
+      if (code === "cancelled") { out.innerHTML = `<div class="grade"><span class="muted">Grading stopped.</span></div>`; }
+      else if (code === "not_granted" || code === "sampling_disabled" || code === "not_declared" || code === "capability_disabled" || code === "capability_removed") {
+        sampleFn = null; btn.hidden = true;
+        out.innerHTML = `<div class="grade"><span class="muted">Grading with Claude is off for this view. Compare your answer with the suggested answer instead.</span></div>`;
+      } else if (code === "rate_limited") { out.innerHTML = `<div class="grade"><span class="muted">Too many grading requests just now. Wait a minute, then try again.</span></div>`; }
+      else if (code === "session_expired") { out.innerHTML = `<div class="grade"><span class="muted">Your Claude session expired. Sign in again, then retry.</span></div>`; }
+      else { out.innerHTML = `<div class="grade"><span class="muted">Grading failed this time. Try again, or compare with the suggested answer.</span></div>`; }
+    } finally {
+      btn.disabled = false;
+    }
+  }
+
+  // ---------- Mode + full render ----------
+  function render() {
+    renderTopic(); renderFilters();
+    const practice = state.mode === "practice";
+    $("#m-browse").setAttribute("aria-pressed", String(!practice));
+    $("#m-practice").setAttribute("aria-pressed", String(practice));
+    $("#list").hidden = practice;
+    $("#doc").hidden = practice;
+    $("#practice").hidden = !practice;
+    if (practice) { document.body.classList.remove("reading"); renderPractice(); }
+    else { renderList(); renderDoc(); }
+  }
+  function refilter() {
+    if (state.mode === "practice") resetOrder();
+    render();
+  }
+
+  // ---------- Light / dark ----------
+  // The page follows the device setting until the viewer picks one; the pick is remembered in this browser.
+  const darkMQ = window.matchMedia ? window.matchMedia("(prefers-color-scheme: dark)") : null;
+  const isDark = () => (document.documentElement.dataset.theme || (darkMQ && darkMQ.matches ? "dark" : "light")) === "dark";
+  function renderTheme() {
+    const dark = isDark(), next = dark ? "light" : "dark";
+    const b = $("#theme-btn");
+    b.classList.toggle("is-dark", dark);
+    $("#theme-label").textContent = dark ? "Light" : "Dark";
+    b.setAttribute("aria-label", `Switch to ${next} mode`);
+    b.title = `Switch to ${next} mode`;
+  }
+  $("#theme-btn").onclick = () => {
+    const next = isDark() ? "light" : "dark";
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem("bar27:theme", next); } catch {}
+    renderTheme();
+  };
+  if (darkMQ && darkMQ.addEventListener) darkMQ.addEventListener("change", renderTheme);
+  try { new MutationObserver(renderTheme).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] }); } catch {}
+  renderTheme();
+
+  // ---------- Events ----------
+  $("#m-browse").onclick = () => { state.mode = "browse"; render(); };
+  $("#m-practice").onclick = () => { state.mode = "practice"; resetOrder(); render(); };
+  $("#topic-sel").onchange = (e) => { state.topic = e.target.value; store.set("topic", state.topic); state.sel = null; refilter(); };
+  let qTimer;
+  $("#q").addEventListener("input", (e) => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value.trim(); refilter(); }, 150); });
+  $(".rail").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.s) state.subject = b.dataset.s;
+    else if (b.dataset.c) state.court = b.dataset.c;
+    else if (b.dataset.st) state.st = b.dataset.st;
+    else return;
+    refilter();
+  });
+  $("#list").addEventListener("click", (e) => { const b = e.target.closest(".card"); if (b) openCase(b.dataset.id, true); });
+  $("#list").addEventListener("change", (e) => { if (e.target.id === "sort") { state.sort = e.target.value; renderList(); } });
+  $("#doc").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.id === "back") { document.body.classList.remove("reading"); state.sel = null; try { history.replaceState(null, "", location.pathname + location.search); } catch {} render(); window.scrollTo(0, 0); return; }
+    if (b.dataset.open) { openCase(b.dataset.open, true); return; }
+    if (b.dataset.mark) {
+      const id = state.sel, m = b.dataset.mark;
+      if (status[id] === m) delete status[id]; else status[id] = m;
+      store.set("status", status); renderTopic(); renderList(); renderDoc(); return;
+    }
+    if (b.dataset.reveal != null) {
+      const box = $(`[data-ans="${b.dataset.reveal}"]`);
+      box.hidden = !box.hidden;
+      b.textContent = box.hidden ? "Show suggested answer" : "Hide suggested answer";
+      b.setAttribute("aria-expanded", String(!box.hidden));
+      return;
+    }
+    if (b.dataset.practice != null) {
+      const c = topic().cases.find((x) => x.id === state.sel);
+      state.mode = "practice"; state.pFilter = "all";
+      resetOrder(qid(c, Number(b.dataset.practice)));
+      render(); window.scrollTo(0, 0);
+    }
+  });
+  $("#practice").addEventListener("click", (e) => {
+    const b = e.target.closest("button"); if (!b) return;
+    if (b.dataset.pf) { state.pFilter = b.dataset.pf; resetOrder(); renderPractice(); return; }
+    if (b.id === "p-next") { gradeCtl?.abort(); state.pIdx = (state.pIdx + 1) % Math.max(1, state.pOrder.length); renderPractice(); return; }
+    if (b.id === "p-prev") { gradeCtl?.abort(); state.pIdx = Math.max(0, state.pIdx - 1); renderPractice(); return; }
+    if (b.id === "p-show") { const r = $("#p-reveal"); r.hidden = !r.hidden; b.textContent = r.hidden ? "Show suggested answer" : "Hide suggested answer"; return; }
+    if (b.id === "p-grade") { grade(); return; }
+    if (b.dataset.qm) {
+      const id = $("#practice").dataset.qid;
+      if (qmark[id] === b.dataset.qm) delete qmark[id]; else qmark[id] = b.dataset.qm;
+      store.set("qmark", qmark);
+      b.parentElement.querySelectorAll("[data-qm]").forEach((x) => x.setAttribute("aria-pressed", String(qmark[id] === x.dataset.qm)));
+      return;
+    }
+    if (b.dataset.goto) { state.mode = "browse"; render(); openCase(b.dataset.goto, true); }
+  });
+
+  // Deep link: #<case-id>
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h && topic().cases.some((c) => c.id === h)) { state.sel = h; document.body.classList.add("reading"); }
+  else if (window.innerWidth > 760) state.sel = filtered()[0]?.id || null;
+  render();
+
+  // Grading with Claude lights up only where the viewer can use it.
+  if (window.claude && typeof window.claude.use === "function") {
+    window.claude.use("sample").then((fn) => {
+      sampleChecked = true;
+      if (fn && typeof fn.json === "function") { sampleFn = fn; const g = document.getElementById("p-grade"); if (g) g.hidden = false; }
+    }).catch(() => { sampleChecked = true; });
+  }
+})();
+</script>

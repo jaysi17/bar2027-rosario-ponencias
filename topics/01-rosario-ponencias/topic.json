@@ -1,0 +1,8 @@
+{
+  "id": "01-rosario-ponencias",
+  "title": "Ponencias of Justice Ricardo R. Rosario",
+  "description": "Decisions and resolutions penned by the 2027 Bar Chairperson, promulgated up to June 30, 2026. Each digest has the doctrine, facts, issues, ruling, court, and three bar-style questions with ALAC answers.",
+  "prompt_file": "1.md",
+  "cutoff": "2026-06-30",
+  "format_notes": "Default digest format (see CLAUDE.md)."
+}

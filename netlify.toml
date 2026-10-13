@@ -1,0 +1,10 @@
+# The site is prebuilt by `python tools/build.py`; Netlify only serves the folder.
+[build]
+  publish = "site"
+  command = ""
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

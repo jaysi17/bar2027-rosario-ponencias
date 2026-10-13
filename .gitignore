@@ -1,0 +1,7 @@
+# Downloaded decision texts: large and re-creatable with the tools/ pipeline (keep them locally)
+.cache/
+# Browser-check screenshots
+.playwright-mcp/
+__pycache__/
+# Netlify CLI local state (never commit; may point at a site in another account)
+.netlify/
