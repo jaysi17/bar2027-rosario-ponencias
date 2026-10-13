@@ -134,7 +134,8 @@ Text fields accept light Markdown: blank line = new paragraph, `**bold**`, `*ita
    court, docket and source URL against `ponencias-index.json` (which came from the decision headers). Then spot-check
    at least one case per batch against the decision text: the doctrine, and that the ALAC answers agree with the ruling.
 5. **Build and publish.** `python tools/build.py` regenerates `DIGESTS.md`, `reviewer/index.html` (Artifact
-   fragment) and `site/index.html` (standalone page with its own `<head>`, for Netlify). Then publish both:
+   fragment) and `site/` (standalone lazy-loading website for Netlify). Then publish both (the website goes live by
+   committing and pushing to GitHub):
    - Republish `reviewer/index.html` to the **same** Artifact URL (below). The `sample` capability carries forward,
      so "Grade my answer" keeps working. Never create a second reviewer artifact for a new topic: topics are tabs
      in the same app.
@@ -153,9 +154,13 @@ Text fields accept light Markdown: blank line = new paragraph, `**bold**`, `*ita
 - GitHub repo: https://github.com/jaysi17/bar2027-rosario-ponencias (public). This repo has its own commit identity
   (`git config user.email` = the jaysi17 noreply address) and the remote URL carries `jaysi17@` so the right stored
   credential is used. Do not change either. `.cache/` and `.netlify/` stay out of git.
-- Public website: not deployed yet. The user wants it public and indexable, on their personal Netlify (see step 5).
-  The page canonical/og URL in `tools/build.py` assumes `https://bar2027-rosario-ponencias.netlify.app/`; update it if
-  the final address differs. The footer carries the credit "Made by JC Medenilla" and the AI-assisted disclaimer; keep both.
+- Public website: https://bar2027-rosario-ponencias.netlify.app, on the user's personal Netlify, **deployed
+  automatically from the GitHub repo** (publish dir `site/`, no build command). To update it: build, commit, push.
+  No Netlify CLI needed (and the CLI on this machine is a work account).
+- The website build is **lazy**: `site/index.html` embeds only the case list (~30 KB compressed); each digest is
+  `site/data/<hash>/<topic>/<id>.json` (~5 KB), fetched when opened; `search.json` loads when the search box is used.
+  The Netlify edge serves this user's region slowly (~15 KB/s measured), so keep the first page small. The Artifact
+  build (`reviewer/index.html`) still embeds everything. The footer carries the credit "Made by JC Medenilla" and the AI-assisted disclaimer; keep both.
   "Grade my answer" only works inside the Claude Artifact; on the website it hides itself.
 - Light/dark toggle in the header; the choice is saved in browser storage (`bar27:theme`), otherwise it follows the device.
 - Progress (reviewed/mastered marks, practice marks, drafts) lives in the viewer's browser storage only.
