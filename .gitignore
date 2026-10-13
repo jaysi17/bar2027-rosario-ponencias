@@ -5,3 +5,5 @@
 __pycache__/
 # Netlify CLI local state (never commit; may point at a site in another account)
 .netlify/
+# Design mockups for review (not part of the site)
+mockups/

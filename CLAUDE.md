@@ -162,6 +162,10 @@ Text fields accept light Markdown: blank line = new paragraph, `**bold**`, `*ita
   The Netlify edge serves this user's region slowly (~15 KB/s measured), so keep the first page small. The Artifact
   build (`reviewer/index.html`) still embeds everything. The footer carries the credit "Made by JC Medenilla" and the AI-assisted disclaimer; keep both.
   "Grade my answer" only works inside the Claude Artifact; on the website it hides itself.
+- Welcome note on open (approved wording; keep it light, not alarming): unofficial, not the only reviewer, arranged by
+  a powerful AI model. The AI mention stays a plain phrase inside the paragraph, not highlighted or boxed (user's choice).
+  It shows on every visit until "Don't show this again" (`bar27:welcome-hidden`); the footer link "About this
+  reviewer" reopens it.
 - Light/dark toggle in the header; the choice is saved in browser storage (`bar27:theme`), otherwise it follows the device.
 - Progress (reviewed/mastered marks, practice marks, drafts) lives in the viewer's browser storage only.
 - Design tokens are at the top of `reviewer/template.html`. Keep the look consistent when adding features.
