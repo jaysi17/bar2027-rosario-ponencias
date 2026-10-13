@@ -171,6 +171,8 @@ Text fields accept light Markdown: blank line = new paragraph, `**bold**`, `*ita
 - Focus reading (wider screens): "Hide" in the case-list header hides the filters and list; a slim sticky "Show cases"
   tab on the left brings them back; shortcut F; remembered in `bar27:focus`. Controls that hide the list must sit on
   the list, never on the reading pane (the user found that confusing). Previous/Next case buttons end every digest.
+- Back-to-top button (bottom right) appears after about a screen of scrolling. It sits 76px up to clear Netlify's
+  "Powered by Netlify" badge; move it to the corner only if the user turns that badge off.
 - Approve-before-ship: for visible UI changes, the user wants a local mockup (screenshots in `mockups/`, gitignored)
   and approval before anything is pushed or published.
 - Light/dark toggle in the header; the choice is saved in browser storage (`bar27:theme`), otherwise it follows the device.
