@@ -186,6 +186,36 @@ def main():
     OUTPUT.write_text(page, encoding="utf-8")
     print(f"Built {OUTPUT.relative_to(ROOT)} ({OUTPUT.stat().st_size // 1024} KB)")
 
+    # The website embeds only the case list and fetches each digest on demand (site/data/<hash>/<topic>/<id>.json),
+    # so the first load is small even on slow connections. The hash in the folder name lets those files be cached forever.
+    import hashlib, shutil
+    digest = hashlib.sha1(payload.encode("utf-8")).hexdigest()[:10]
+    data_root = SITE.parent / "data"
+    shutil.rmtree(data_root, ignore_errors=True)
+    out_dir = data_root / digest
+    search, site_topics = {}, []
+    # Only what the list, the filters and the case header need; everything else loads with the digest.
+    list_fields = ["id", "short_title", "docket", "date", "ponente", "court", "decision_type", "subject", "topics"]
+    for t in topics:
+        (out_dir / t["id"]).mkdir(parents=True, exist_ok=True)
+        rows = []
+        for c in t["cases"]:
+            (out_dir / t["id"] / f"{c['id']}.json").write_text(json.dumps(c, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+            row = {k: c[k] for k in list_fields if c.get(k)}
+            if c.get("other_subjects"):
+                row["other_subjects"] = [{"subject": o["subject"]} for o in c["other_subjects"]]
+            if c.get("superseded_by"):
+                row["superseded_by"] = {"id": c["superseded_by"]["id"], "label": c["superseded_by"].get("label", "")}
+            row["nq"] = len(c["bar_questions"])
+            rows.append(row)
+            search[f"{t['id']}/{c['id']}"] = " ".join(
+                [c["full_title"], c["syllabus_topic"], c["doctrine"]] + [o.get("syllabus_topic", "") for o in c.get("other_subjects", [])]).lower()
+        site_topics.append({**{k: v for k, v in t.items() if k != "cases"}, "cases": rows})
+    (out_dir / "search.json").write_text(json.dumps(search, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
+    site_payload = json.dumps({"subjects": SUBJECTS, "topics": site_topics, "base": f"data/{digest}"},
+                              ensure_ascii=False, separators=(",", ":")).replace("</", "<\\/")
+    page = html.replace(DATA_MARKER, site_payload)
+
     head_part, sep, body_part = page.partition(BODY_START)
     if not sep:
         sys.exit(f"template is missing {BODY_START!r}, needed to split <head> from <body> for the site build")

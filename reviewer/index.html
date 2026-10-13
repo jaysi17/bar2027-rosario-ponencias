@@ -368,6 +368,34 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
   const topic = () => DATA.topics.find((t) => t.id === state.topic) || { cases: [], title: "No topics yet", description: "" };
   const qid = (c, i) => c.id + "~q" + (i + 1);
 
+  // ---------- Case data ----------
+  // The Artifact build embeds every digest. The website build embeds only the case list (DATA.base is set)
+  // and fetches a digest when it is opened, so the first load stays small on slow connections.
+  const LAZY = !!DATA.base;
+  const full = new Map();     // "topic/id" -> full digest
+  const pending = new Map();  // "topic/id" -> in-flight fetch
+  const ckey = (id) => state.topic + "/" + id;
+  if (!LAZY) for (const t of DATA.topics) for (const c of t.cases) full.set(t.id + "/" + c.id, c);
+  const getFull = (id) => full.get(ckey(id));
+  function loadCase(id) {
+    const k = ckey(id);
+    if (full.has(k)) return Promise.resolve(full.get(k));
+    if (!pending.has(k)) {
+      pending.set(k, fetch(`${DATA.base}/${k}.json`)
+        .then((r) => { if (!r.ok) throw new Error("HTTP " + r.status); return r.json(); })
+        .then((c) => { full.set(k, c); return c; })
+        .finally(() => pending.delete(k)));
+    }
+    return pending.get(k);
+  }
+  let searchText = null, searchFetch = null;  // "topic/id" -> doctrine and topics, for search on the website
+  function ensureSearch() {
+    if (!LAZY || searchText || searchFetch) return;
+    searchFetch = fetch(`${DATA.base}/search.json`).then((r) => r.json())
+      .then((d) => { searchText = d; if (state.q) refilter(); })
+      .catch(() => { searchFetch = null; });
+  }
+
   function matches(c) {
     if (state.subject !== "all" && c.subject !== state.subject && !(c.other_subjects || []).some((o) => o.subject === state.subject)) return false;
     if (state.court === "banc" && c.court !== "En Banc") return false;
@@ -375,7 +403,8 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
     const s = status[c.id] || "none";
     if (state.st !== "all" && s !== state.st) return false;
     if (state.q) {
-      const hay = [c.short_title, c.full_title, c.docket, c.doctrine, c.syllabus_topic, (c.topics || []).join(" "), c.subject].join(" ").toLowerCase();
+      const body = LAZY ? ((searchText || {})[ckey(c.id)] || "") : c.doctrine;
+      const hay = [c.short_title, c.full_title, c.docket, body, c.syllabus_topic, (c.topics || []).join(" "), c.subject].join(" ").toLowerCase();
       if (!state.q.toLowerCase().split(/\s+/).filter(Boolean).every((w) => hay.includes(w))) return false;
     }
     return true;
@@ -456,22 +485,35 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
     const rows = [["A", "Answer", a.answer], ["L", "Legal basis", a.legal_basis], ["A", "Application", a.application], ["C", "Conclusion", a.conclusion]];
     return `<div class="alac">${rows.map(([k, l, v]) => `<span class="k" aria-hidden="true">${k}</span><div class="v"><b>${l}</b><div>${rich(v)}</div></div>`).join("")}</div>`;
   }
+  function docHead(c) {
+    return `<button type="button" class="back" id="back">← All cases</button>
+      <div class="court ${c.court === "En Banc" ? "is-banc" : ""}">${esc(c.court)}</div>
+      <h2>${esc(c.short_title)}</h2>
+      ${c.full_title ? `<p class="full">${esc(c.full_title)}</p>` : ""}
+      <div class="dmeta"><span>${esc(c.docket)}</span><span>${esc(fmtDate(c.date))}</span><span>${esc(c.ponente)}</span><span>${esc(c.decision_type)}</span></div>`;
+  }
   function renderDoc() {
-    const c = topic().cases.find((x) => x.id === state.sel);
+    const meta = topic().cases.find((x) => x.id === state.sel);
     const doc = $("#doc");
-    if (!c) {
+    if (!meta) {
       const first = filtered()[0];
       doc.innerHTML = `<div class="doc-in"><div class="court">Select a case</div><p class="full" style="font-variant:normal">Pick a case from the list to read its doctrine, facts, issues, ruling and three bar-style questions with suggested ALAC answers.</p>${first ? `<div style="text-align:center"><button type="button" class="btn primary" data-open="${esc(first.id)}">Open ${esc(first.short_title)}</button></div>` : ""}</div>`;
+      return;
+    }
+    const c = getFull(meta.id);
+    if (!c) {
+      doc.innerHTML = `<div class="doc-in">${docHead(meta)}<p class="muted loading" style="text-align:center">Loading the digest…</p></div>`;
+      loadCase(meta.id).then(() => { if (state.sel === meta.id && state.mode === "browse") renderDoc(); })
+        .catch(() => {
+          if (state.sel !== meta.id) return;
+          doc.innerHTML = `<div class="doc-in">${docHead(meta)}<div class="empty">This digest did not load. Check your connection, then <button type="button" class="btn" data-open="${esc(meta.id)}">Try again</button></div></div>`;
+        });
       return;
     }
     const s = status[c.id] || "none";
     const others = (c.other_subjects || []).map((o) => `${esc(SUBJ[o.subject]?.short || o.subject)}${o.syllabus_topic ? " — " + esc(o.syllabus_topic) : ""}`).join("<br>");
     doc.innerHTML = `<div class="doc-in">
-      <button type="button" class="back" id="back">← All cases</button>
-      <div class="court ${c.court === "En Banc" ? "is-banc" : ""}">${esc(c.court)}</div>
-      <h2>${esc(c.short_title)}</h2>
-      <p class="full">${esc(c.full_title)}</p>
-      <div class="dmeta"><span>${esc(c.docket)}</span><span>${esc(fmtDate(c.date))}</span><span>${esc(c.ponente)}</span><span>${esc(c.decision_type)}</span></div>
+      ${docHead(c)}
       ${c.superseded_by ? `<div class="banner" role="note"><b>${esc(c.superseded_by.label || "Superseded")} — not the controlling rule</b><span>${esc(c.superseded_by.summary)}</span>${topic().cases.some((x) => x.id === c.superseded_by.id) ? `<button type="button" data-open="${esc(c.superseded_by.id)}">Read the later ruling</button>` : ""}</div>` : ""}
       <dl class="class">
         <dt>Subject</dt><dd>${subjectDot(c.subject)} ${esc(c.subject)}</dd>
@@ -512,12 +554,15 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
   // ---------- Practice ----------
   function pool() {
     const out = [];
-    for (const c of filtered()) c.bar_questions.forEach((q, i) => {
-      const m = qmark[qid(c, i)];
-      if (state.pFilter === "again" && m !== "again") return;
-      if (state.pFilter === "new" && m) return;
-      out.push({ c, q, i, id: qid(c, i) });
-    });
+    for (const c of filtered()) {
+      const n = c.bar_questions ? c.bar_questions.length : (c.nq || 0);
+      for (let i = 0; i < n; i++) {
+        const m = qmark[qid(c, i)];
+        if (state.pFilter === "again" && m !== "again") continue;
+        if (state.pFilter === "new" && m) continue;
+        out.push({ c, i, id: qid(c, i) });
+      }
+    }
     return out;
   }
   function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -542,10 +587,22 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
       el.innerHTML = `<div class="p-card"><div class="p-top"><span>Practice</span><div class="seg">${filt}</div></div><div class="empty">No questions match. Widen the subject or court filters, or switch to “All questions”.</div></div>`;
       return;
     }
+    el.dataset.qid = cur.id;
+    const top = `<div class="p-top"><span>Question <b>${state.pIdx + 1}</b> of ${state.pOrder.length} · ${esc(SUBJ[cur.c.subject]?.short || cur.c.subject)}</span><div class="seg">${filt}</div></div>`;
+    const fc = getFull(cur.c.id);
+    if (!fc) {
+      el.innerHTML = `<div class="p-card">${top}<p class="muted loading">Loading the question…</p></div>`;
+      loadCase(cur.c.id).then(() => { if (state.mode === "practice" && el.dataset.qid === cur.id) renderPractice(); })
+        .catch(() => { if (el.dataset.qid === cur.id) el.innerHTML = `<div class="p-card">${top}<div class="empty">This question did not load. Check your connection, then <button type="button" class="btn" id="p-retry">Try again</button></div></div>`; });
+      return;
+    }
+    const nx = byId[state.pOrder[state.pIdx + 1]];
+    if (nx) loadCase(nx.c.id).catch(() => {});  // have the next question ready
+    const q = fc.bar_questions[cur.i];
     const draft = store.get("draft:" + cur.id, "");
     el.innerHTML = `<div class="p-card">
-      <div class="p-top"><span>Question <b>${state.pIdx + 1}</b> of ${state.pOrder.length} · ${esc(SUBJ[cur.c.subject]?.short || cur.c.subject)}</span><div class="seg">${filt}</div></div>
-      <div class="p-q">${rich(cur.q.q)}</div>
+      ${top}
+      <div class="p-q">${rich(q.q)}</div>
       <div class="p-lab"><label for="p-ans">Your answer</label><span>Answer · Legal basis · Application · Conclusion</span></div>
       <textarea id="p-ans" placeholder="Write it the way you would in the bar booklet: answer first, then the legal basis, apply it to the facts, then conclude.">${esc(draft)}</textarea>
       <div class="p-act">
@@ -557,7 +614,7 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
       </div>
       <div id="p-grade-out" hidden></div>
       <div id="p-reveal" hidden>
-        <div class="sec" style="gap:12px"><h3>Suggested answer</h3>${alacHTML(cur.q.alac)}</div>
+        <div class="sec" style="gap:12px"><h3>Suggested answer</h3>${alacHTML(q.alac)}</div>
         <p class="from">From <button type="button" data-goto="${esc(cur.c.id)}">${esc(cur.c.short_title)}</button>, ${esc(cur.c.docket)}, ${esc(fmtDate(cur.c.date))} (${esc(cur.c.court)}).</p>
         <div class="p-act"><span class="muted">How did you do?</span>
           <button type="button" class="btn" data-qm="got" aria-pressed="${qmark[cur.id] === "got"}">Got it</button>
@@ -565,26 +622,25 @@ textarea#p-ans { width: 100%; min-height: 220px; resize: vertical; background: v
         </div>
       </div>
     </div>`;
-    el.dataset.qid = cur.id;
     const ta = $("#p-ans");
     ta.addEventListener("input", () => store.set("draft:" + cur.id, ta.value));
     if (sampleFn) $("#p-grade").hidden = false;
   }
 
-  function gradePrompt(cur, answer) {
-    return `You are a Philippine Bar examiner grading one essay answer for the 2027 Bar Examinations. The problem is worth 5 points. Grade the examinee's answer against the controlling doctrine and the suggested answer below, which come from the Supreme Court decision ${cur.c.short_title}, ${cur.c.docket}, ${cur.c.date}. Do not rely on any other case. Reward a correct conclusion only when it is supported by the right legal basis and applied to the facts. Accept equivalent reasoning that reaches the same result. Be strict but fair, the way a bar examiner would be.
+  function gradePrompt(c, q, answer) {
+    return `You are a Philippine Bar examiner grading one essay answer for the 2027 Bar Examinations. The problem is worth 5 points. Grade the examinee's answer against the controlling doctrine and the suggested answer below, which come from the Supreme Court decision ${c.short_title}, ${c.docket}, ${c.date}. Do not rely on any other case. Reward a correct conclusion only when it is supported by the right legal basis and applied to the facts. Accept equivalent reasoning that reaches the same result. Be strict but fair, the way a bar examiner would be.
 
 PROBLEM:
-${cur.q.q}
+${q.q}
 
 CONTROLLING DOCTRINE:
-${cur.c.doctrine}
+${c.doctrine}
 
 SUGGESTED ANSWER (ALAC):
-Answer: ${cur.q.alac.answer}
-Legal basis: ${cur.q.alac.legal_basis}
-Application: ${cur.q.alac.application}
-Conclusion: ${cur.q.alac.conclusion}
+Answer: ${q.alac.answer}
+Legal basis: ${q.alac.legal_basis}
+Application: ${q.alac.application}
+Conclusion: ${q.alac.conclusion}
 
 EXAMINEE'S ANSWER:
 ${answer}
@@ -598,6 +654,8 @@ Score from 0 to 5 in half points.`;
     const el = $("#practice");
     const id = el.dataset.qid;
     const cur = pool().find((x) => x.id === id);
+    const fc = cur && getFull(cur.c.id);
+    if (!fc) return;
     const ans = $("#p-ans").value.trim();
     const out = $("#p-grade-out");
     out.hidden = false;
@@ -609,7 +667,7 @@ Score from 0 to 5 in half points.`;
     out.innerHTML = `<div class="grade"><span class="muted">Grading… this usually takes 10 to 40 seconds.</span><div><button type="button" class="btn" id="p-stop">Stop</button></div></div>`;
     $("#p-stop").onclick = () => gradeCtl?.abort();
     try {
-      const r = await sampleFn.json(gradePrompt(cur, ans), { signal: gradeCtl.signal, cache: false });
+      const r = await sampleFn.json(gradePrompt(fc, fc.bar_questions[cur.i], ans), { signal: gradeCtl.signal, cache: false });
       if (el.dataset.qid !== id) return;
       const sc = Math.max(0, Math.min(5, Number(r.score) || 0));
       const parts = [["answer", "Answer"], ["legal_basis", "Legal basis"], ["application", "Application"], ["conclusion", "Conclusion"]];
@@ -679,7 +737,8 @@ Score from 0 to 5 in half points.`;
   $("#m-practice").onclick = () => { state.mode = "practice"; resetOrder(); render(); };
   $("#topic-sel").onchange = (e) => { state.topic = e.target.value; store.set("topic", state.topic); state.sel = null; refilter(); };
   let qTimer;
-  $("#q").addEventListener("input", (e) => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value.trim(); refilter(); }, 150); });
+  $("#q").addEventListener("input", (e) => { clearTimeout(qTimer); qTimer = setTimeout(() => { state.q = e.target.value.trim(); if (state.q) ensureSearch(); refilter(); }, 150); });
+  $("#q").addEventListener("focus", ensureSearch);
   $(".rail").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.s) state.subject = b.dataset.s;
@@ -716,6 +775,7 @@ Score from 0 to 5 in half points.`;
   $("#practice").addEventListener("click", (e) => {
     const b = e.target.closest("button"); if (!b) return;
     if (b.dataset.pf) { state.pFilter = b.dataset.pf; resetOrder(); renderPractice(); return; }
+    if (b.id === "p-retry") { renderPractice(); return; }
     if (b.id === "p-next") { gradeCtl?.abort(); state.pIdx = (state.pIdx + 1) % Math.max(1, state.pOrder.length); renderPractice(); return; }
     if (b.id === "p-prev") { gradeCtl?.abort(); state.pIdx = Math.max(0, state.pIdx - 1); renderPractice(); return; }
     if (b.id === "p-show") { const r = $("#p-reveal"); r.hidden = !r.hidden; b.textContent = r.hidden ? "Show suggested answer" : "Hide suggested answer"; return; }

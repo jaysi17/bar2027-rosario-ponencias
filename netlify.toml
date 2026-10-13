@@ -3,6 +3,12 @@
   publish = "site"
   command = ""
 
+# Digest files live under a content-hash folder, so a browser can keep them for good.
+[[headers]]
+  for = "/data/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
 [[headers]]
   for = "/*"
   [headers.values]
