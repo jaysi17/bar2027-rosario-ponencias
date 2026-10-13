@@ -166,6 +166,13 @@ Text fields accept light Markdown: blank line = new paragraph, `**bold**`, `*ita
   a powerful AI model. The AI mention stays a plain phrase inside the paragraph, not highlighted or boxed (user's choice).
   It shows on every visit until "Don't show this again" (`bar27:welcome-hidden`); the footer link "About this
   reviewer" reopens it.
+- Header navigation is two nav links (Digests, Practice) with icons, not a toggle. A "Practice here" callout points at
+  Practice after the welcome note closes, until its X or Practice is clicked (`bar27:practice-tip-closed`).
+- Focus reading (wider screens): "Hide" in the case-list header hides the filters and list; a slim sticky "Show cases"
+  tab on the left brings them back; shortcut F; remembered in `bar27:focus`. Controls that hide the list must sit on
+  the list, never on the reading pane (the user found that confusing). Previous/Next case buttons end every digest.
+- Approve-before-ship: for visible UI changes, the user wants a local mockup (screenshots in `mockups/`, gitignored)
+  and approval before anything is pushed or published.
 - Light/dark toggle in the header; the choice is saved in browser storage (`bar27:theme`), otherwise it follows the device.
 - Progress (reviewed/mastered marks, practice marks, drafts) lives in the viewer's browser storage only.
 - Design tokens are at the top of `reviewer/template.html`. Keep the look consistent when adding features.
