@@ -150,6 +150,9 @@ Text fields accept light Markdown: blank line = new paragraph, `**bold**`, `*ita
   this session has not published it.
 - Modes: **Digests** (filter by subject, En Banc/Division, status; search) and **Practice** (bar questions one at a
   time, write an answer, reveal the ALAC suggested answer, optional AI grading through the `sample` capability).
+- GitHub repo: https://github.com/jaysi17/bar2027-rosario-ponencias (public). This repo has its own commit identity
+  (`git config user.email` = the jaysi17 noreply address) and the remote URL carries `jaysi17@` so the right stored
+  credential is used. Do not change either. `.cache/` and `.netlify/` stay out of git.
 - Public website: not deployed yet. The user wants it public and indexable, on their personal Netlify (see step 5).
   The page canonical/og URL in `tools/build.py` assumes `https://bar2027-rosario-ponencias.netlify.app/`; update it if
   the final address differs. The footer carries the credit "Made by JC Medenilla" and the AI-assisted disclaimer; keep both.
